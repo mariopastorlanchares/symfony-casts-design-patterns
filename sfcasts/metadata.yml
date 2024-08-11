@@ -1,0 +1,15 @@
+chapters:
+  - patterns
+  - strategy
+  - strategy-benefits
+  - builder
+  - builder-improve
+  - builder-factory
+  - observer
+  - observer-class
+  - observer-benefits
+  - pub-sub
+  - pub-sub-di
+  - decorator
+  - decorator-di
+  - as-decorator
