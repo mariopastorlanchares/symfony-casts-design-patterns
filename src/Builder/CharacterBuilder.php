@@ -9,16 +9,22 @@ use App\ArmorType\ShieldType;
 use App\AttackType\AttackType;
 use App\AttackType\BowType;
 use App\AttackType\FireBoltType;
+use App\AttackType\MultiAttackType;
 use App\AttackType\TwoHandedSwordType;
 use App\Character\Character;
+use Psr\Log\LoggerInterface;
 
 class CharacterBuilder
 {
 
     private int $maxHealth;
     private int $baseDamage;
-    private string $attackType;
+    private array $attackTypes;
     private string $armorType;
+
+    public function __construct(private LoggerInterface $logger)
+    {
+    }
 
     public function setMaxHealth(int $maxHealth): self
     {
@@ -32,9 +38,9 @@ class CharacterBuilder
         return $this;
     }
 
-    public function setAttackType(string $attackType): self
+    public function setAttackType(string ...$attackTypes): self
     {
-        $this->attackType = $attackType;
+        $this->attackTypes = $attackTypes;
         return $this;
     }
 
@@ -47,24 +53,38 @@ class CharacterBuilder
 
     public function buildCharacter(): Character
     {
+        $this->logger->info('Creating a character', [
+                'maxHealth' => $this->maxHealth,
+                'baseDamage' => $this->baseDamage,
+            ]
+        );
+
+        $attackTypes = array_map(fn(string $attackType) => $this->createAttackType($attackType), $this->attackTypes);
+
+        if (count($attackTypes) === 1) {
+            $attackType = $attackTypes[0];
+        } else {
+            $attackType = new MultiAttackType($attackTypes);
+        }
 
         return new Character(
             $this->maxHealth,
             $this->baseDamage,
-            $this->createAttackType(),
+            $attackType,
             $this->createArmorType(),
         );
     }
 
-    private function createAttackType(): AttackType
+    private function createAttackType(string $attackType): AttackType
     {
-        return match ($this->attackType) {
+        return match ($attackType) {
             'bow' => new BowType(),
             'fire_bolt' => new FireBoltType(),
             'sword' => new TwoHandedSwordType(),
             default => throw new \RuntimeException('Invalid attack type given')
         };
     }
+
     private function createArmorType(): ArmorType
     {
         return match ($this->armorType) {

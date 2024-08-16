@@ -9,10 +9,24 @@ use App\AttackType\BowType;
 use App\AttackType\FireBoltType;
 use App\AttackType\MultiAttackType;
 use App\AttackType\TwoHandedSwordType;
+use App\Builder\CharacterBuilder;
+use App\Builder\CharacterBuilderFactory;
 use App\Character\Character;
+use App\Observer\GameObserverInterface;
 
 class GameApplication
 {
+
+
+    /**
+     * @var GameObserverInterface[]
+     */
+    private array $observers = [];
+
+    public function __construct(private readonly CharacterBuilderFactory $characterBuilderFactory)
+    {
+    }
+
     public function play(Character $player, Character $ai): FightResult
     {
         $player->rest();
@@ -45,10 +59,30 @@ class GameApplication
     public function createCharacter(string $character): Character
     {
         return match (strtolower($character)) {
-            'fighter' => new Character(90, 12, new TwoHandedSwordType(), new ShieldType()),
-            'archer' => new Character(80, 10, new BowType(), new LeatherArmorType()),
-            'mage' => new Character(70, 8, new FireBoltType(), new IceBlockType()),
-            'mage_archer' => new Character(75, 9, new MultiAttackType([new BowType(), new FireBoltType()]), new ShieldType()),
+            'fighter' => $this->createCharacterBuilder()
+                ->setMaxHealth(90)
+                ->setBaseDamage(12)
+                ->setAttackType('sword')
+                ->setArmorType('shield')
+                ->buildCharacter(),
+            'archer' => $this->createCharacterBuilder()
+                ->setMaxHealth(80)
+                ->setBaseDamage(10)
+                ->setAttackType('bow')
+                ->setArmorType('leather_armor')
+                ->buildCharacter(),
+            'mage' => $this->createCharacterBuilder()
+                ->setMaxHealth(70)
+                ->setBaseDamage(8)
+                ->setAttackType('fire_bolt')
+                ->setArmorType('ice_block')
+                ->buildCharacter(),
+            'mage_archer' => $this->createCharacterBuilder()
+                ->setMaxHealth(75)
+                ->setBaseDamage(9)
+                ->setAttackType('fire_bolt', 'bow') // TODO re-add bow!
+                ->setArmorType('shield')
+                ->buildCharacter(),
             default => throw new \RuntimeException('Undefined Character'),
         };
     }
@@ -63,10 +97,29 @@ class GameApplication
         ];
     }
 
+    public function subscribe(GameObserverInterface $observer): void
+    {
+        if (!in_array($observer, $this->observers, true)) {
+            $this->observers[] = $observer;
+        }
+
+    }
+
+    public function unsubscribe(GameObserverInterface $observer): void
+    {
+        $key = array_search($observer, $this->observers, true);
+        if ($key !== false) {
+            unset($this->observers[$key]);
+        }
+
+    }
+
     private function finishFightResult(FightResult $fightResult, Character $winner, Character $loser): FightResult
     {
         $fightResult->setWinner($winner);
         $fightResult->setLoser($loser);
+
+        $this->notify($fightResult);
 
         return $fightResult;
     }
@@ -75,4 +128,17 @@ class GameApplication
     {
         return $player->getCurrentHealth() <= 0;
     }
+
+    private function createCharacterBuilder(): CharacterBuilder
+    {
+        return $this->characterBuilderFactory->createBuilder();
+    }
+
+    private function notify(FightResult $fightResult): void
+    {
+        foreach ($this->observers as $observer) {
+            $observer->onFightFinished($fightResult);
+        }
+    }
+
 }

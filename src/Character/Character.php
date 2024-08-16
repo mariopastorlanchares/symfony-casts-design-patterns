@@ -14,6 +14,11 @@ class Character
     private int $currentHealth;
     private string $nickname = '';
 
+    private int $level = 1;
+
+    private int $xp = 0;
+
+
     public function __construct(
         private int        $maxHealth,
         private int        $baseDamage,
@@ -68,5 +73,30 @@ class Character
     {
         $this->currentHealth = $this->maxHealth;
         $this->currentStamina = self::MAX_STAMINA;
+    }
+
+    public function getLevel(): int
+    {
+        return $this->level;
+    }
+
+    public function addXp(int $xp): void
+    {
+        $this->xp += $xp;
+    }
+
+    public function getXp(): int
+    {
+        return $this->xp;
+    }
+
+
+    public function levelUp(): void
+    {
+        $bonus = 1.15;
+        $this->level++;
+        $this->maxHealth = floor($this->maxHealth * $bonus);
+        $this->baseDamage = floor($this->baseDamage * $bonus);
+
     }
 }
