@@ -12,7 +12,9 @@ use App\AttackType\TwoHandedSwordType;
 use App\Builder\CharacterBuilder;
 use App\Builder\CharacterBuilderFactory;
 use App\Character\Character;
+use App\Event\FightStartingEvent;
 use App\Observer\GameObserverInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 class GameApplication
 {
@@ -23,12 +25,17 @@ class GameApplication
      */
     private array $observers = [];
 
-    public function __construct(private readonly CharacterBuilderFactory $characterBuilderFactory)
+    public function __construct(
+        private readonly CharacterBuilderFactory  $characterBuilderFactory,
+        private readonly EventDispatcherInterface $eventDispatcher
+    )
     {
     }
 
     public function play(Character $player, Character $ai): FightResult
     {
+        $event = new FightStartingEvent($player, $ai);
+        $this->eventDispatcher->dispatch($event);
         $player->rest();
 
         $fightResult = new FightResult();
