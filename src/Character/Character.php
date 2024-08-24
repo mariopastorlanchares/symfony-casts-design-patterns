@@ -80,9 +80,10 @@ class Character
         return $this->level;
     }
 
-    public function addXp(int $xp): void
+    public function addXp(int $xp): int
     {
         $this->xp += $xp;
+        return $this->xp;
     }
 
     public function getXp(): int

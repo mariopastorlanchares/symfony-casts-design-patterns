@@ -8,6 +8,7 @@ use App\Event\OutputFightStartingSubscriber;
 use App\FightResult;
 use App\GameApplication;
 use App\Observer\XpEarnedObserver;
+use App\Service\OutputtingXpCalculator;
 use App\Service\XpCalculator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,7 +22,6 @@ class GameCommand extends Command
 {
     public function __construct(
         private readonly GameApplication          $game,
-        private readonly EventDispatcherInterface $eventDispatcher
     )
     {
         parent::__construct();
